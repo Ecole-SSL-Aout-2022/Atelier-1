@@ -1,2 +1,3 @@
 # Atelier-1
-Atelier 1 : description à venir...
+
+### Apparaige Bluetooth sur Linux (Ubuntu)
