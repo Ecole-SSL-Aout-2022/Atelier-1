@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # This will discover nearby active Bluetooth devices
 # and return the MAC adresses of the RSK robots
 function discover_rsk_devices() {
@@ -11,9 +10,36 @@ function discover_rsk_devices() {
 	return $devices
 }
 
+# Pairs a single BT device
+function pair_robot() {
+
+	# Starts an asynchronous pairing
+	coproc BTCTL (bluetoothctl pair $device)
+
+	# Grab pairing status, to guess if we need to enter PIN or just type in yes
+	# We use the file descriptor of the asynchronous process
+	# to achieve this (0 for output, 1 for input)
+	while IFS= read -r -u "${BTCTL[0]}" line;
+	do
+		if [ echo $line | grep -q "Enter PIN code:" ]; then
+			# Send 1234 to ${BTCTL[1]} which is like a user-input
+			sleep 1 # wait a bit to finish pairing
+			break #todo : check if paired correctly ? if not increase sleep time ?
+
+		elif [ echo $line | grep -q "" ]; then
+			#TODO : else if on "Check PIN code is same on BT device" prompt
+		else;
+			# I gotta break the loop at some point, but when ?
+		fi
+	done
+
+	# After pairing, we kill the coprocess
+	kill -9 BTCTL_PID
+
+}
+
 function main() {
 	devices=$(discover_rsk_devices)
-	echo "$devices" >
 }
 
 main
