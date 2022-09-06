@@ -23,13 +23,14 @@ function pair_robot() {
 	do
 		if [ echo $line | grep -q "Enter PIN code:" ]; then
 			# Send 1234 to ${BTCTL[1]} which is like a user-input
+			echo "1234" >& "${BTCTL[1]}"
 			sleep 1 # wait a bit to finish pairing
 			break #todo : check if paired correctly ? if not increase sleep time ?
 
-		elif [ echo $line | grep -q "" ]; then
-			#TODO : else if on "Check PIN code is same on BT device" prompt
-		else;
-			# I gotta break the loop at some point, but when ?
+		elif [ echo $line | grep -q "Confirm passkey" ]; then
+			echo "y" >& "${BTCTL[1]}"
+		elif [ line = "Pairing successful" ];
+			break
 		fi
 	done
 
