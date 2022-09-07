@@ -44,17 +44,20 @@ function pair_robot() {
 			echo "y" >& "${BTCTL[1]}"
 
 		# In case pairing is successful
-		elif [ line = "Pairing successful" ];
+		elif [ $line -eq "Pairing successful" ]; then
 			# Another check to see if device paired correctly (is this necessary ? probably not)
 			paired=$(bluetoothctl paired-devices | grep $device_mac)
 			if [ $paired -eq "" ]; then
-				echo "Pairing of ${device_name} has failed, please pair manually"
+				echo "Unknown Error : Pairing of ${device_name} has failed, please pair manually"
 				echo "$device_name\n" > $FAILED_LOG_FILE
 			else;
 				echo "${device_name} paired successfully !"
 			fi
 			break
 
+		elif [ echo $line | grep -q "Failed to pair" ]; then
+			echo "${device_name} could not be paired. Reason : ${line} \n Check ${BT_LOG_FILE} for more info"
+			break
 		fi
 	done
 
