@@ -3,8 +3,10 @@
 # This will discover nearby active Bluetooth devices
 # and return the MAC adresses of the RSK robots
 function discover_rsk_devices() {
-	# Start discovering bluetooth devices for n seconds
+	# Start discovering bluetooth devices for 5 seconds
+	### Note that timeout will halt the program until 5 seconds has passed
 	timeout 5 bluetoothctl scan on
+
 	# Grab MAC adresses of only RSK devices
 	devices=$(bluetoothctl devices | grep RSK)
 	return $devices
@@ -28,16 +30,22 @@ function pair_robot() {
 	# to achieve this (0 for output, 1 for input)
 	while IFS= read -r -u "${BTCTL[0]}" line;
 	do
+		# Log the output
 		echo $line >> $BT_LOG_FILE
+
+		# Check whether we confirm passkey or enter pin code
 		if [ echo $line | grep -q "Enter PIN code:" ]; then
 			# Send 1234 to ${BTCTL[1]} which is like a user-input
 			echo "1234" >& "${BTCTL[1]}"
 			sleep 1 # wait a bit to finish pairing
 
 		elif [ echo $line | grep -q "Confirm passkey" ]; then
+			# Just reply yes to pair device
 			echo "y" >& "${BTCTL[1]}"
 
+		# In case pairing is successful
 		elif [ line = "Pairing successful" ];
+			# Another check to see if device paired correctly (is this necessary ? probably not)
 			paired=$(bluetoothctl paired-devices | grep $device_mac)
 			if [ $paired -eq "" ]; then
 				echo "Pairing of ${device_name} has failed, please pair manually"
@@ -62,13 +70,17 @@ function main() {
 	echo "" > $BT_LOG_FILE
 
 	new_devices=$(discover_rsk_devices)
-	#alr_paired=$(bluetoothctl paired-devices)
+	alr_paired=$(bluetoothctl paired-devices)
 
-	# TODO : check for already paired devices
 	for devi in $new_devices do
 		devi_name=$(echo $devi | cut -f1 -d" ")
 		devi_mac=$(echo $devi | cut -f2 -d" ")
-		pair_robot $devi_name $devi_mac
+
+		# Dupe check taken from RSK's github - pair.sh script
+		dupe=$(echo $alr_paired | grep $devi_mac)
+		if [ $dupe -eq "" ]; then
+			pair_robot $devi_name $devi_mac
+		fi
 	done
 }
 
