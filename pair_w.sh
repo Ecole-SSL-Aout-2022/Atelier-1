@@ -14,9 +14,11 @@ function discover_rsk_devices() {
 # Params :
 # 	device - MAC Adress of a RSK robot
 function pair_robot() {
-	
+
 	device_name=$1
 	device_mac=$2
+
+	echo "${device_name} - ${device_mac}\n" >> $BT_LOG_FILE
 
 	# Starts an asynchronous pairing
 	coproc BTCTL (bluetoothctl pair $device_mac)
@@ -26,6 +28,7 @@ function pair_robot() {
 	# to achieve this (0 for output, 1 for input)
 	while IFS= read -r -u "${BTCTL[0]}" line;
 	do
+		echo $line >> $BT_LOG_FILE
 		if [ echo $line | grep -q "Enter PIN code:" ]; then
 			# Send 1234 to ${BTCTL[1]} which is like a user-input
 			echo "1234" >& "${BTCTL[1]}"
@@ -38,7 +41,7 @@ function pair_robot() {
 			paired=$(bluetoothctl paired-devices | grep $device_mac)
 			if [ $paired -eq "" ]; then
 				echo "Pairing of ${device_name} has failed, please pair manually"
-				echo "$device_name\n" > $LOG_FILE
+				echo "$device_name\n" > $FAILED_LOG_FILE
 			else;
 				echo "${device_name} paired successfully !"
 			fi
@@ -48,15 +51,18 @@ function pair_robot() {
 	done
 
 	# After pairing, we kill the coprocess
-	kill -9 BTCTL_PID
+	kill -9 $BTCTL_PID
 
 }
 
 function main() {
-	LOG_FILE="failed_pairings.log"
+	FAILED_LOG_FILE="failed_pairings.log"
+	echo "" > $FAILED_LOG_FILE
+	BT_LOG_FILE="bluetoothctl_pairing.log"
+	echo "" > $BT_LOG_FILE
+
 	new_devices=$(discover_rsk_devices)
 	#alr_paired=$(bluetoothctl paired-devices)
-	dev_macs=$(echo $"{new_devices}" | cut -f2 -d" ")
 
 	# TODO : check for already paired devices
 	for devi in $new_devices do
