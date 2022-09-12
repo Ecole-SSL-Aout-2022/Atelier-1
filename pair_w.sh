@@ -50,7 +50,7 @@ function pair_robot() {
 			if [ $paired -eq "" ]; then
 				echo "Unknown Error : Pairing of ${device_name} has failed, please pair manually"
 				echo "$device_name\n" > $FAILED_LOG_FILE
-			else;
+			else
 				echo "${device_name} paired successfully !"
 			fi
 			break
@@ -75,13 +75,15 @@ function main() {
 	new_devices=$(discover_rsk_devices)
 	alr_paired=$(bluetoothctl paired-devices)
 
-	for devi in $new_devices do
+	for devi in $new_devices;
+	do
 		devi_name=$(echo $devi | cut -f1 -d" ")
 		devi_mac=$(echo $devi | cut -f2 -d" ")
 
 		# Dupe check taken from RSK's github - pair.sh script
 		dupe=$(echo $alr_paired | grep $devi_mac)
-		if [ $dupe -eq "" ]; then
+		echo "$dupe"
+		if [ "$dupe" -eq "" ]; then
 			pair_robot $devi_name $devi_mac
 		fi
 	done
