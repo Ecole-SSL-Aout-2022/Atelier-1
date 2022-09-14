@@ -3,12 +3,15 @@
 # This will discover nearby active Bluetooth devices
 # and return the MAC adresses of the RSK robots
 function discover_rsk_devices() {
-	# Start discovering bluetooth devices for 5 seconds
-	### Note that timeout will halt the program until 5 seconds has passed
-	timeout 5 bluetoothctl scan on
-
+	# Start discovering bluetooth devices in the background
+	bluetoothctl scan on &
+	pid=$!
+	# Wait a bit
+	sleep 6
 	# Grab MAC adresses of only RSK devices
 	devices=$(bluetoothctl devices | grep RSK)
+	# Kill the discovery process
+	kill -9 $pid
 	return $devices
 }
 
