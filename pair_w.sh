@@ -2,17 +2,10 @@
 
 # This will discover nearby active Bluetooth devices
 # and return the MAC adresses of the RSK robots
-function discover_rsk_devices() {
-	# Start discovering bluetooth devices in the background
-	bluetoothctl scan on &
-	pid=$!
-	# Wait a bit
-	sleep 6
+function grab_rsk_devices() {
 	# Grab MAC adresses of only RSK devices
-	devices=$(bluetoothctl devices | grep RSK)
-	# Kill the discovery process
-	kill -9 $pid
-	return $devices
+	devices=$(bluetoothctl devices | grep SHIELD)
+	echo $devices
 }
 
 # Pairs a single BT device
@@ -69,14 +62,29 @@ function pair_robot() {
 
 }
 
-function main() {
+function log_setup() {
 	FAILED_LOG_FILE="failed_pairings.log"
 	echo "" > $FAILED_LOG_FILE
 	BT_LOG_FILE="bluetoothctl_pairing.log"
 	echo "" > $BT_LOG_FILE
+	SCAN_LOG_FILE="bluetoothctl_scan_on.log"
+	echo "" > $SCAN_LOG_FILE
+}
 
-	new_devices=$(discover_rsk_devices)
+function main() {
+	log_setup
+	echo "Starting discovery..."
+	# Start discovering bluetooth devices in the background
+	bluetoothctl scan on & >>$SCAN_LOG_FILE 2>>$SCAN_LOG_FILE
+	scanpid=$!
+	# Wait for devices to be discovered
+	sleep 3
+
+	new_devices=$(grab_rsk_devices)
 	alr_paired=$(bluetoothctl paired-devices)
+
+	# Stop the discovery process
+	kill -9 $scanpid
 
 	for devi in $new_devices;
 	do
@@ -85,8 +93,8 @@ function main() {
 
 		# Dupe check taken from RSK's github - pair.sh script
 		dupe=$(echo $alr_paired | grep $devi_mac)
-		echo "$dupe"
-		if [ "$dupe" -eq "" ]; then
+		echo "Current dupe is : ${dupe}"
+		if [ -z "$dupe" ]; then
 			pair_robot $devi_name $devi_mac
 		fi
 	done
