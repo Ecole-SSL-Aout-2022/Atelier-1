@@ -4,7 +4,7 @@
 # and return the MAC adresses of the RSK robots
 function grab_rsk_devices() {
 	# Grab MAC adresses of only RSK devices
-	devices=$(bluetoothctl devices | grep OnePlus)
+	devices=$(bluetoothctl devices | grep "RSK")
 	echo "$devices"
 }
 
@@ -74,8 +74,6 @@ function log_setup() {
 	echo " " > $FAILED_LOG_FILE
 	BT_LOG_FILE="bluetoothctl_pairing.log"
 	echo " " > $BT_LOG_FILE
-	SCAN_LOG_FILE="bluetoothctl_scan_on.log"
-	echo " " > $SCAN_LOG_FILE
 	NEW_DEVI_FILE="new_devices.log"
 	echo " " > $NEW_DEVI_FILE
 }
@@ -84,20 +82,22 @@ function main() {
 	log_setup
 	echo "Starting discovery..."
 	# Start discovering bluetooth devices in the background
-	bluetoothctl scan on & >> $SCAN_LOG_FILE 2>> $SCAN_LOG_FILE
+	bluetoothctl scan on &
 	scanpid=$!
 	# Wait for devices to be discovered
-	sleep 3
+	sleep 5
 
 	echo "Discovery ended"
 	new_devices=$(grab_rsk_devices)
+	echo "$new_devices"
 
 	# Stop the discovery process
+	fg && bluetoothctl scan off
 	kill -9 $scanpid
 
 	echo "$new_devices" > $NEW_DEVI_FILE
 
-	if [[ -n "$new_devices" ]]
+	if [[ -z "$new_devices" ]]
 	then
 		echo "No devices found..."
 		return 0
