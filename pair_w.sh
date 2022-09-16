@@ -27,8 +27,11 @@ function pair_robot() {
 	# Grab pairing status, to guess if we need to enter PIN or just type in yes
 	# We use the file descriptor of the asynchronous process
 	# to achieve this (0 for output, 1 for input)
-	while IFS="\n" read -r -u "${BTCTL[0]}"  line;
+	while IFS="\n" read -r -u "${BTCTL[0]}" line;
 	do
+		# Remove color coding
+		## Super sed command taken from https://stackoverflow.com/a/18000433
+		line=$(echo $line | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g")
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
 		# Check whether we confirm passkey or enter pin code
@@ -38,7 +41,7 @@ function pair_robot() {
 			echo "1234" >& "${BTCTL[1]}"
 			sleep 1 # wait a bit to finish pairing
 
-		elif [ "$(echo "$line" | grep -q "Confirm passkey")" ]
+	 	elif [ "$(echo "$line" | grep -q "Confirm passkey")" ]
 		then
 			# Just reply yes to pair device
 			echo "y" >& "${BTCTL[1]}"
@@ -92,8 +95,6 @@ function main() {
 
 	# Stop the discovery process
 	kill -9 $scanpid
-
-	echo $NEW_DEVI_FILE
 
 	while IFS="\n" read -r devi
 	do
