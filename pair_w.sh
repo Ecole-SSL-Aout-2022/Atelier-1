@@ -69,6 +69,13 @@ function pair_robot() {
 
 }
 
+# Kills a process silently, without
+# a warning message in STDOUT
+function ninja_kill() {
+	kill -9 $1
+	wait $! 2>/dev/null
+}
+
 function log_setup() {
 	FAILED_LOG_FILE="failed_pairings.log"
 	echo " " > $FAILED_LOG_FILE
@@ -78,22 +85,30 @@ function log_setup() {
 	echo " " > $NEW_DEVI_FILE
 }
 
-function main() {
-	log_setup
+function discover_devices() {
+
 	echo "Starting discovery..."
+
 	# Start discovering bluetooth devices in the background
-	bluetoothctl scan on &
-	scanpid=$!
+	coproc BT_SCAN (bluetoothctl)
+	echo "scan on" >& "${BT_SCAN[1]}"
+
 	# Wait for devices to be discovered
 	sleep 5
+	
+	# Stop the discovery process
+	echo "scan off" >& "${BT_SCAN[1]}"
+	ninja_kill "$BT_SCAN_PID"
 
 	echo "Discovery ended"
-	new_devices=$(grab_rsk_devices)
-	echo "$new_devices"
+}
 
-	# Stop the discovery process
-	fg && bluetoothctl scan off
-	kill -9 $scanpid
+function main() {
+	
+	log_setup
+	discover_devices
+
+	new_devices=$(grab_rsk_devices)
 
 	echo "$new_devices" > $NEW_DEVI_FILE
 
@@ -102,6 +117,7 @@ function main() {
 		echo "No devices found..."
 		return 0
 	else
+		printf "New devices found listed below :\n%s" "$new_devices"
 		alr_paired=$(bluetoothctl paired-devices)
 		while IFS="\n" read -r devi
 		do
