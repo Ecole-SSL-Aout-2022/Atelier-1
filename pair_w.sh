@@ -4,7 +4,7 @@
 # and return the MAC adresses of the RSK robots
 function grab_rsk_devices() {
 	# Grab MAC adresses of only RSK devices
-	devices=$(bluetoothctl devices | grep RSK)
+	devices=$(bluetoothctl devices | grep OnePlus)
 	echo "$devices"
 }
 
@@ -88,31 +88,39 @@ function main() {
 	scanpid=$!
 	# Wait for devices to be discovered
 	sleep 3
+
 	echo "Discovery ended"
 	new_devices=$(grab_rsk_devices)
-	echo "$new_devices" > $NEW_DEVI_FILE
-	alr_paired=$(bluetoothctl paired-devices)
 
 	# Stop the discovery process
 	kill -9 $scanpid
 
-	while IFS="\n" read -r devi
-	do
-		echo "$devi"
-		devi_name=$(echo "$devi" | cut -f3 -d" ")
-		devi_mac=$(echo "$devi" | cut -f2 -d" ")
+	echo "$new_devices" > $NEW_DEVI_FILE
 
-		echo "$devi_name"
-		echo "$devi_mac"
+	if [[ -n "$new_devices" ]]
+	then
+		echo "No devices found..."
+		return 0
+	else
+		alr_paired=$(bluetoothctl paired-devices)
+		while IFS="\n" read -r devi
+		do
+			echo "$devi"
+			devi_name=$(echo "$devi" | cut -f3 -d" ")
+			devi_mac=$(echo "$devi" | cut -f2 -d" ")
 
-		# Dupe check taken from RSK's github - pair.sh script
-		dupe=$(echo "$alr_paired" | grep "$devi_mac")
-		echo "Dupe is $dupe"
-		if [ -z "$dupe" ]; then
-			pair_robot "$devi_name" "$devi_mac"
-		fi
-		break
-	done < $NEW_DEVI_FILE
+			echo "$devi_name"
+			echo "$devi_mac"
+
+			# Dupe check taken from RSK's github - pair.sh script
+			dupe=$(echo "$alr_paired" | grep "$devi_mac")
+			echo "Dupe is $dupe"
+			if [ -z "$dupe" ]; then
+				pair_robot "$devi_name" "$devi_mac"
+			fi
+			break
+		done < $NEW_DEVI_FILE
+	fi
 }
 
 main
