@@ -24,7 +24,7 @@ function pair_robot() {
 	# Grab pairing status, to guess if we need to enter PIN or just type in yes
 	# We use the file descriptor of the asynchronous process
 	# to achieve this (0 for output, 1 for input)
-	while IFS= read -r -u line;
+	while IFS= read -r -u "${BTCTL[0]}"  line;
 	do
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
@@ -56,7 +56,7 @@ function pair_robot() {
 			printf "%s could not be paired. Reason : %s \n Check %s for more info" "${device_name}" "${line}" "${BT_LOG_FILE}"
 			break
 		fi
-	done < "${BTCTL[0]}"
+	done
 
 	# After pairing, we kill the coprocess
 	kill -9 "$BTCTL_PID"
