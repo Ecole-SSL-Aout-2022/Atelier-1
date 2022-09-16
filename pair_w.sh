@@ -4,7 +4,7 @@
 # and return the MAC adresses of the RSK robots
 function grab_rsk_devices() {
 	# Grab MAC adresses of only RSK devices
-	devices=$(bluetoothctl devices | grep SHIELD)
+	devices=$(bluetoothctl devices | grep RSK)
 	echo "$devices"
 }
 
@@ -19,12 +19,15 @@ function pair_robot() {
 	printf "%s- %s\n" "${device_name}" "${device_mac}" >> $BT_LOG_FILE
 
 	# Starts an asynchronous pairing
-	coproc BTCTL (bluetoothctl pair "$device_mac")
+	coproc BTCTL (bluetoothctl)
+
+	echo "pair ${device_mac}" >& "${BTCTL[1]}"
+	sleep 1
 
 	# Grab pairing status, to guess if we need to enter PIN or just type in yes
 	# We use the file descriptor of the asynchronous process
 	# to achieve this (0 for output, 1 for input)
-	while IFS= read -r -u "${BTCTL[0]}"  line;
+	while IFS="\n" read -r -u "${BTCTL[0]}"  line;
 	do
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
@@ -89,6 +92,8 @@ function main() {
 
 	# Stop the discovery process
 	kill -9 $scanpid
+
+	echo $NEW_DEVI_FILE
 
 	while IFS="\n" read -r devi
 	do
