@@ -26,6 +26,15 @@ function log_setup() {
 	echo " " > $NEW_DEVI_FILE
 }
 
+# Initializes some test aliases
+# just to make the code more readable
+function test_aliases() {
+	alias asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
+	alias asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
+	alias pairSuccess='[[ "$($line -eq "Pairing successful")" ]]'
+	alias failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
+}
+
 # Pairs a single BT device
 # Params :
 # 	device - MAC Adress of a RSK robot
@@ -50,22 +59,25 @@ function pair_robot() {
 		# Remove color coding
 		## Super sed command taken from https://stackoverflow.com/a/18000433
 		line=$(echo $line | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g")
+
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
+		
 		# Check whether we confirm passkey or enter pin code
-		if [[ $(echo "$line" | grep -q "Enter PIN code:") ]]
+		if asksForPin
 		then
 			# Send 1234 to ${BTCTL[1]} which is like a user-input
 			echo "1234" >& "${BTCTL[1]}"
 			sleep 1 # wait a bit to finish pairing
 
-	 	elif [ "$(echo "$line" | grep -q "Confirm passkey")" ]
+	 	elif asksConfirm
 		then
 			# Just reply yes to pair device
 			echo "y" >& "${BTCTL[1]}"
 
 		# In case pairing is successful
-		elif [ "$($line -eq "Pairing successful")" ]; then
+		elif pairSuccess
+		then
 			# Another check to see if device paired correctly (is this necessary ? probably not)
 			paired=$(bluetoothctl paired-devices | grep "$device_mac")
 			if [ "$("$paired" -eq "")" ]; then
@@ -75,13 +87,14 @@ function pair_robot() {
 				echo "${device_name} paired successfully !"
 			fi
 
-		elif [ "$(echo "$line" | grep -q "Failed to pair")" ]; then
+		elif failedToPair
+		then
 			printf "%s could not be paired. Reason : %s \n Check %s for more info" "${device_name}" "${line}" "${BT_LOG_FILE}"
 		fi
 	done
 
 	# After pairing, we kill the coprocess
-	kill -9 "$BTCTL_PID"
+	ninja_kill "$BTCTL_PID"
 
 }
 
