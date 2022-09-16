@@ -8,6 +8,24 @@ function grab_rsk_devices() {
 	echo "$devices"
 }
 
+# Kills a process silently, without
+# a warning message in STDOUT
+function ninja_kill() {
+	kill -9 $1
+	wait $! 2>/dev/null
+}
+
+# Initializes any log files
+# that we might need later on
+function log_setup() {
+	FAILED_LOG_FILE="failed_pairings.log"
+	echo " " > $FAILED_LOG_FILE
+	BT_LOG_FILE="bluetoothctl_pairing.log"
+	echo " " > $BT_LOG_FILE
+	NEW_DEVI_FILE="new_devices.log"
+	echo " " > $NEW_DEVI_FILE
+}
+
 # Pairs a single BT device
 # Params :
 # 	device - MAC Adress of a RSK robot
@@ -56,11 +74,9 @@ function pair_robot() {
 			else
 				echo "${device_name} paired successfully !"
 			fi
-			break
 
 		elif [ "$(echo "$line" | grep -q "Failed to pair")" ]; then
 			printf "%s could not be paired. Reason : %s \n Check %s for more info" "${device_name}" "${line}" "${BT_LOG_FILE}"
-			break
 		fi
 	done
 
@@ -69,22 +85,9 @@ function pair_robot() {
 
 }
 
-# Kills a process silently, without
-# a warning message in STDOUT
-function ninja_kill() {
-	kill -9 $1
-	wait $! 2>/dev/null
-}
-
-function log_setup() {
-	FAILED_LOG_FILE="failed_pairings.log"
-	echo " " > $FAILED_LOG_FILE
-	BT_LOG_FILE="bluetoothctl_pairing.log"
-	echo " " > $BT_LOG_FILE
-	NEW_DEVI_FILE="new_devices.log"
-	echo " " > $NEW_DEVI_FILE
-}
-
+# Starts discovering Bluetooth devices in a coprocess
+# Apparently, if not in a coprocess it can collide with an existing one
+# This is more of a safety measure more than anything
 function discover_devices() {
 
 	echo "Starting discovery..."
