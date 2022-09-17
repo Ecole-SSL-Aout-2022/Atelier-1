@@ -29,10 +29,10 @@ function log_setup() {
 # Initializes some test aliases
 # just to make the code more readable
 function test_aliases() {
-	alias asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
-	alias asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
-	alias pairSuccess='[[ "$($line -eq "Pairing successful")" ]]'
-	alias failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
+	asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
+	asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
+	pairSuccess='[[ "$($line -eq "Pairing successful")" ]]'
+	failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
 }
 
 # Pairs a single BT device
@@ -62,21 +62,21 @@ function pair_robot() {
 
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
-		
+
 		# Check whether we confirm passkey or enter pin code
-		if asksForPin
+		if $asksForPin
 		then
 			# Send 1234 to ${BTCTL[1]} which is like a user-input
 			echo "1234" >& "${BTCTL[1]}"
 			sleep 1 # wait a bit to finish pairing
 
-	 	elif asksConfirm
+	 	elif $asksConfirm
 		then
 			# Just reply yes to pair device
 			echo "y" >& "${BTCTL[1]}"
 
 		# In case pairing is successful
-		elif pairSuccess
+		elif $pairSuccess
 		then
 			# Another check to see if device paired correctly (is this necessary ? probably not)
 			paired=$(bluetoothctl paired-devices | grep "$device_mac")
@@ -87,7 +87,7 @@ function pair_robot() {
 				echo "${device_name} paired successfully !"
 			fi
 
-		elif failedToPair
+		elif $failedToPair
 		then
 			printf "%s could not be paired. Reason : %s \n Check %s for more info" "${device_name}" "${line}" "${BT_LOG_FILE}"
 		fi
@@ -111,7 +111,7 @@ function discover_devices() {
 
 	# Wait for devices to be discovered
 	sleep 5
-	
+
 	# Stop the discovery process
 	echo "scan off" >& "${BT_SCAN[1]}"
 	ninja_kill "$BT_SCAN_PID"
@@ -120,7 +120,7 @@ function discover_devices() {
 }
 
 function main() {
-	
+
 	log_setup
 	discover_devices
 
@@ -150,7 +150,6 @@ function main() {
 			if [ -z "$dupe" ]; then
 				pair_robot "$devi_name" "$devi_mac"
 			fi
-			break
 		done < $NEW_DEVI_FILE
 	fi
 }
