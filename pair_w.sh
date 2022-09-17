@@ -43,7 +43,7 @@ function pair_robot() {
 	device_name=$1
 	device_mac=$2
 
-	printf "%s- %s\n" "${device_name}" "${device_mac}" >> $BT_LOG_FILE
+	printf "--- %s- %s\n" "${device_name}" "${device_mac} ---" >> $BT_LOG_FILE
 
 	# Starts an asynchronous pairing
 	coproc BTCTL (bluetoothctl)
@@ -90,6 +90,9 @@ function pair_robot() {
 		elif $failedToPair
 		then
 			printf "%s could not be paired. Reason : %s \n Check %s for more info" "${device_name}" "${line}" "${BT_LOG_FILE}"
+
+		else
+			continue
 		fi
 	done
 
@@ -140,9 +143,6 @@ function main() {
 			echo "$devi"
 			devi_name=$(echo "$devi" | cut -f3 -d" ")
 			devi_mac=$(echo "$devi" | cut -f2 -d" ")
-
-			echo "$devi_name"
-			echo "$devi_mac"
 
 			# Dupe check taken from RSK's github - pair.sh script
 			dupe=$(echo "$alr_paired" | grep "$devi_mac")
