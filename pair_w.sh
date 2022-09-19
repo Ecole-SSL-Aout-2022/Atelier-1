@@ -31,7 +31,7 @@ function log_setup() {
 function test_aliases() {
 	asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
 	asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
-	pairSuccess='[[ "$($line -eq "Pairing successful")" ]]'
+	pairSuccess='[[ "$(echo $line | grep -q "Connected: yes")" ]] || [[ $(echo $line | grep -q "Pairing successful") ]]'
 	failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
 }
 
@@ -89,6 +89,7 @@ function pair_robot() {
 			else
 				echo "${device_name} paired successfully !"
 			fi
+			break
 
 		elif $failedToPair
 		then
@@ -139,7 +140,7 @@ function main() {
 		echo "No devices found..."
 		return 0
 	else
-		printf "New devices found listed below :\n%s" "$new_devices"
+		printf "New devices found listed below :\n%s" "$new_devices" # TODO: printed twice ?
 		alr_paired=$(bluetoothctl paired-devices)
 		while IFS="\n" read -r devi
 		do
