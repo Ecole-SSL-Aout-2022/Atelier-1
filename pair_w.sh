@@ -83,8 +83,8 @@ function pair_robot() {
 		elif $pairSuccess
 		then
 			# Another check to see if device paired correctly (is this necessary ? probably not)
-			paired=$(bluetoothctl paired-devices | grep "$device_mac")
-			if [ "$("$paired" -eq "")" ]; then
+			paired=$(bluetoothctl paired-devices | grep "$device_mac" --line-buffered)
+			if [[ -z "$paired" ]]; then
 				echo "Unknown Error : Pairing of ${device_name} has failed, please pair manually"
 				echo "$device_name\n" > $FAILED_LOG_FILE
 			else
@@ -128,7 +128,6 @@ function discover_devices() {
 }
 
 function main() {
-
 	log_setup
 	discover_devices
 
