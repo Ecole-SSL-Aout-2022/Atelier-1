@@ -61,8 +61,8 @@ function pair_robot() {
 		sleep 0.75
 
 		# Remove color coding
-		## Super sed command taken from https://stackoverflow.com/a/18000433
-		line=$(echo $line | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g")
+		## Super sed command taken from https://www.linuxquestions.org/questions/programming-9/control-bluetoothctl-with-scripting-4175615328/#post5850529
+		line=$(echo $line | sed -r 's/\x1B\[[0-9;]*[JKmsu]//g; s/\r/\n/g')
 
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
