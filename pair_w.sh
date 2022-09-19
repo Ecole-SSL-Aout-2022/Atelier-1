@@ -29,6 +29,7 @@ function log_setup() {
 # Initializes some test aliases
 # just to make the code more readable
 function test_aliases() {
+	# Conditions are somehow broken
 	asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
 	asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
 	pairSuccess='[[ "$(echo $line | grep -q "Connected: yes")" ]] || [[ $(echo $line | grep -q "Pairing successful") ]]'
