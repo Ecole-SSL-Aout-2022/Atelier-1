@@ -6,3 +6,8 @@
 * Full tutorial
 * TL:DR tutorial (for the fast ones)
 * Docs & comments inside script
+
+## grep -q tests not working properly
+Here are some possibilities
+* https://unix.stackexchange.com/questions/625630/grep-has-different-result-in-terminal-command-line-and-bash-script
+* https://unix.stackexchange.com/questions/468485/escaping-problem-with-find-command
