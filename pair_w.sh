@@ -66,7 +66,7 @@ function pair_robot() {
 
 		# Remove color coding
 		## Super sed command taken from https://www.linuxquestions.org/questions/programming-9/control-bluetoothctl-with-scripting-4175615328/#post5850529
-		line=$(echo $line | sed -r 's/\x1B\[[0-9;]*[JKmsu]//g; s/\r/\n/g')
+		line=$(echo $line | sed -r 's/\x1B\[[0-9;]*[JKmsu]//g; s/\r/\n/g' | tr -d $'\x01' | tr -d $'\x02')
 
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
