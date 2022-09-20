@@ -30,10 +30,14 @@ function log_setup() {
 # just to make the code more readable
 function test_aliases() {
 	# Conditions are somehow broken
-	asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
-	asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
-	pairSuccess='[[ "$(echo $line | grep -q "Connected: yes")" ]] || [[ $(echo $line | grep -q "Pairing successful") ]]'
-	failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
+	# asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
+	# asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
+	# pairSuccess='[[ "$(echo $line | grep -q "Connected: yes")" ]] || [[ $(echo $line | grep -q "Pairing successful") ]]'
+	# failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
+	asksForPin="[[ $(echo "$line" | awk '/Enter PIN code:/') != '' ]]"
+	asksConfirm="[[ $(echo "$line" | awk '/Confirm passkey/') != '' ]]"
+	pairSuccess="[[ $(echo "$line" | awk '/Connected: yes/ || /Pairing successful/') != '' ]]"
+	failedToPair="[[ $(echo "$line" | awk '/Failed to pair"/') != '' ]]"
 }
 
 # Pairs a single BT device
