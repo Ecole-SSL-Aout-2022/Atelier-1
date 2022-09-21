@@ -36,7 +36,7 @@ function test_aliases() {
 	# failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
 	asksForPin="[[ $(echo "$line" | awk '/Enter PIN code:/') != '' ]]"
 	asksConfirm="[[ $(echo "$line" | awk '/Confirm passkey/') != '' ]]"
-	pairSuccess="[[ $(echo "$line" | awk '/Connected: yes/ || /Pairing successful/') != '' ]]"
+	pairSuccess="[[ $(echo "$line" | awk -v mac='${device_mac}' '/Connected: yes/ || /Pairing successful/ || /\[mac\]/') != '' ]]"
 	failedToPair="[[ $(echo "$line" | awk '/Failed to pair"/') != '' ]]"
 }
 
