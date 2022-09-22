@@ -4,7 +4,7 @@
 # and return the MAC adresses of the RSK robots
 function grab_rsk_devices() {
 	# Grab MAC adresses of only RSK devices
-	devices=$(bluetoothctl devices | grep "RSK")
+	devices=$(bluetoothctl devices | grep "Soundcore")
 	echo "$devices"
 }
 
@@ -63,7 +63,7 @@ function pair_robot() {
 	device_mac=$2
 
 	printf "### %s- %s\n" "${device_name}" "${device_mac} ###" >> $BT_LOG_FILE
-
+	
 	# Starts an asynchronous pairing
 	coproc BTCTL (bluetoothctl)
 
