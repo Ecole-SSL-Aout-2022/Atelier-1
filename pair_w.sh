@@ -26,6 +26,10 @@ function log_setup() {
 	echo " " > $NEW_DEVI_FILE
 }
 
+# Checks what is the current status of pairing
+# from a read line of the bluetoothctl command in a coprocess
+# Params:
+# 	- current_line | The line we are currently reading from bluetoothctl's output
 function check_pairing_status() {
 	
 	current_line=$1
@@ -54,6 +58,28 @@ function check_pairing_status() {
 	echo $status
 }
 
+# Another check to see if device paired correctly (is this necessary ? probably not)
+function recheck_pair_success() {
+	paired=$(bluetoothctl paired-devices | grep "$device_mac" --line-buffered)
+	if [[ -z "$paired" ]]; then
+		echo "Unknown Error : Pairing of ${device_name} has failed, please pair manually"
+		echo "$device_name\n" > $FAILED_LOG_FILE
+	else
+		echo "${device_name} paired successfully !"
+	fi
+}
+
+# Sends 1234 to ${BTCTL[1]} which is like a user-input to the coprocess
+function send_pincode() {
+	echo "1234" >& "${BTCTL[1]}"
+	sleep 1 # wait a bit to finish pairing
+}
+
+# Replies with 'y' to the coprocess
+function send_yes() {
+	echo "y" >& "${BTCTL[1]}"	
+}
+
 # Pairs a single BT device
 # Params :
 # 	device - MAC Adress of a RSK robot
@@ -63,23 +89,31 @@ function pair_robot() {
 	device_mac=$2
 
 	printf "### %s- %s\n" "${device_name}" "${device_mac} ###" >> $BT_LOG_FILE
-	
-	# Starts an asynchronous pairing
+	echo "Currently pairing ${device_name}.."
+
+	# Start an asynchronous command using coproc
 	coproc BTCTL (bluetoothctl)
 
+	# Send the 'pair' command to the coprocess
 	echo "pair ${device_mac}" >& "${BTCTL[1]}"
+	# This wait time is just for bluetoothctl to do its stuff, better not rush the reading
 	sleep 2
 
-	# Grab pairing status, to guess if we need to enter PIN or just type in yes
-	# We use the file descriptor of the asynchronous process
+	# This big block manages the pairing of a device, depending
+	# of the output of bluetoothctl. It manages 2 cases :
+	# 	- Waiting for the user to confirm the PIN of the devices matches
+	# 	- Waiting for the user to input a PIN code (legacy pairing)
+	# It also catches wheter or not a device could be paired successfully
+	
+	# We use the file descriptors of the asynchronous process
 	# to achieve this (0 for output, 1 for input)
+
 	while IFS="\n" read -r -u "${BTCTL[0]}" line;
 	do
 
-		sleep 0.75
-
 		# Remove color coding
 		## Super sed command taken from https://www.linuxquestions.org/questions/programming-9/control-bluetoothctl-with-scripting-4175615328/#post5850529
+		## Added my tr's to remove some hex colors that came from color coding
 		line=$(echo $line | sed -r 's/\x1B\[[0-9;]*[JKmsu]//g; s/\r/\n/g' | tr -d $'\x01' | tr -d $'\x02')
 
 		# Log the output
@@ -91,32 +125,23 @@ function pair_robot() {
 		# Check whether we confirm passkey or enter pin code
 		if [ $status -eq "1" ]
 		then
-			# Send 1234 to ${BTCTL[1]} which is like a user-input
-			echo "1234" >& "${BTCTL[1]}"
-			sleep 1 # wait a bit to finish pairing
+			send_pincode
 
 	 	elif [ $status -eq "2" ]
 		then
-			# Just reply yes to pair device
-			echo "y" >& "${BTCTL[1]}"
+			send_yes
 
 		# In case pairing is successful
 		elif [ $status -eq "0" ]
 		then
-			# Another check to see if device paired correctly (is this necessary ? probably not)
-			paired=$(bluetoothctl paired-devices | grep "$device_mac" --line-buffered)
-			if [[ -z "$paired" ]]; then
-				echo "Unknown Error : Pairing of ${device_name} has failed, please pair manually"
-				echo "$device_name\n" > $FAILED_LOG_FILE
-			else
-				echo "${device_name} paired successfully !"
-			fi
+			recheck_pair_success
 			break
 
+		# If pairing failed
 		elif [ $status -eq "-1" ]
 		then
 			printf "%s could not be paired. Reason : %s \n Check %s for more info" "${device_name}" "${line}" "${BT_LOG_FILE}"
-
+			break
 		else
 			continue
 		fi
@@ -161,21 +186,23 @@ function main() {
 		echo "No devices found..."
 		return 0
 	else
-		printf "New devices found listed below :\n%s" "$new_devices" # TODO: printed twice ?
+		echo -e "New devices found listed below :\n$new_devices"
 		alr_paired=$(bluetoothctl paired-devices)
 		while IFS="\n" read -r devi
 		do
-			echo "$devi"
 			devi_name=$(echo "$devi" | cut -f3 -d" ")
 			devi_mac=$(echo "$devi" | cut -f2 -d" ")
 
 			# Dupe check taken from RSK's github - pair.sh script
 			dupe=$(echo "$alr_paired" | grep "$devi_mac")
-			echo "Dupe is $dupe"
+
 			if [ -z "$dupe" ]; then
 				pair_robot "$devi_name" "$devi_mac"
+			else
+				echo "$devi_name is already paired !"
 			fi
 		done < $NEW_DEVI_FILE
+		return 0
 	fi
 }
 
