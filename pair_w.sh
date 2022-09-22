@@ -26,18 +26,32 @@ function log_setup() {
 	echo " " > $NEW_DEVI_FILE
 }
 
-# Initializes some test aliases
-# just to make the code more readable
-function test_aliases() {
-	# Conditions are somehow broken
-	# asksForPin='[[ $(echo "$line" | grep -q "Enter PIN code:") ]]'
-	# asksConfirm='[[ "$(echo "$line" | grep -q "Confirm passkey")" ]]'
-	# pairSuccess='[[ "$(echo $line | grep -q "Connected: yes")" ]] || [[ $(echo $line | grep -q "Pairing successful") ]]'
-	# failedToPair='[[ "$(echo "$line" | grep -q "Failed to pair")" ]]'
-	asksForPin="[[ $(echo "$line" | awk '/Enter PIN code:/') != '' ]]"
-	asksConfirm="[[ $(echo "$line" | awk '/Confirm passkey/') != '' ]]"
-	pairSuccess="[[ $(echo "$line" | awk -v mac='${device_mac}' '/Connected: yes/ || /Pairing successful/ || /\[mac\]/') != '' ]]"
-	failedToPair="[[ $(echo "$line" | awk '/Failed to pair"/') != '' ]]"
+function check_pairing_status() {
+	
+	current_line=$1
+	status=-42
+
+	# Possible status-es
+	# 1 is Asking for pin
+	# 2 is Asks for confirmation
+	# 0 is Pairing successful
+	# -1 is Failed pairing
+
+	grep -q "Enter PIN code:" <<< ${current_line}
+	[ $? -eq 0 ] && status="1"
+
+	grep -q "Confirm passkey" <<< ${current_line}
+	[ $? -eq 0 ] && status="2"
+
+	grep -q "Connected: yes" <<< ${current_line}
+	[ $? -eq 0 ] && status="0"
+	grep -q "Pairing successful" <<< ${current_line}
+	[ $? -eq 0 ] && status="0"
+
+	grep -q "Failed to pair" <<< ${current_line}
+	[ $? -eq 0 ] && status="-1"
+
+	echo $status
 }
 
 # Pairs a single BT device
@@ -71,20 +85,23 @@ function pair_robot() {
 		# Log the output
 		echo "$line" >> $BT_LOG_FILE
 
+		# Launch the tests checking current status of pairing
+		status=$(check_pairing_status "$line")
+
 		# Check whether we confirm passkey or enter pin code
-		if $asksForPin
+		if [ $status -eq "1" ]
 		then
 			# Send 1234 to ${BTCTL[1]} which is like a user-input
 			echo "1234" >& "${BTCTL[1]}"
 			sleep 1 # wait a bit to finish pairing
 
-	 	elif $asksConfirm
+	 	elif [ $status -eq "2" ]
 		then
 			# Just reply yes to pair device
 			echo "y" >& "${BTCTL[1]}"
 
 		# In case pairing is successful
-		elif $pairSuccess
+		elif [ $status -eq "0" ]
 		then
 			# Another check to see if device paired correctly (is this necessary ? probably not)
 			paired=$(bluetoothctl paired-devices | grep "$device_mac" --line-buffered)
@@ -96,7 +113,7 @@ function pair_robot() {
 			fi
 			break
 
-		elif $failedToPair
+		elif [ $status -eq "-1" ]
 		then
 			printf "%s could not be paired. Reason : %s \n Check %s for more info" "${device_name}" "${line}" "${BT_LOG_FILE}"
 
