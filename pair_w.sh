@@ -33,6 +33,7 @@ function log_setup() {
 function check_pairing_status() {
 	
 	current_line=$1
+	device_mac=$2
 	status=-42
 
 	# Possible status-es
@@ -47,7 +48,7 @@ function check_pairing_status() {
 	grep -q "Confirm passkey" <<< ${current_line}
 	[ $? -eq 0 ] && status="2"
 
-	grep -q "Connected: yes" <<< ${current_line}
+	bluetoothctl paired-devices | grep -q "${device_mac}"
 	[ $? -eq 0 ] && status="0"
 	grep -q "Pairing successful" <<< ${current_line}
 	[ $? -eq 0 ] && status="0"
@@ -92,7 +93,8 @@ function pair_robot() {
 	echo "Currently pairing ${device_name}.."
 
 	# Start an asynchronous command using coproc
-	coproc BTCTL (bluetoothctl)
+	coproc BTCTL (bash)
+	echo "bluetoothctl" >& "${BTCTL[1]}"
 
 	# Send the 'pair' command to the coprocess
 	echo "pair ${device_mac}" >& "${BTCTL[1]}"
@@ -120,7 +122,7 @@ function pair_robot() {
 		echo "$line" >> $BT_LOG_FILE
 
 		# Launch the tests checking current status of pairing
-		status=$(check_pairing_status "$line")
+		status=$(check_pairing_status "$line" "$device_mac")
 
 		# Check whether we confirm passkey or enter pin code
 		if [ $status -eq "1" ]
@@ -156,6 +158,11 @@ function pair_robot() {
 # Apparently, if not in a coprocess it can collide with an existing one
 # This is more of a safety measure more than anything
 function discover_devices() {
+
+	echo "Restarting bluetooth..."
+	rfkill block bluetooth
+	sleep 1
+	rfkill unblock bluetooth
 
 	echo "Starting discovery..."
 
