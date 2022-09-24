@@ -76,9 +76,9 @@ function send_pincode() {
 	sleep 1 # wait a bit to finish pairing
 }
 
-# Replies with 'y' to the coprocess
+# Replies with 'yes' to the coprocess
 function send_yes() {
-	echo "y" >& "${BTCTL[1]}"	
+	echo "yes" >& "${BTCTL[1]}"
 }
 
 # Pairs a single BT device
