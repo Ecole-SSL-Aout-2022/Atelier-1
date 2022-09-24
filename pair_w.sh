@@ -160,9 +160,6 @@ function pair_robot() {
 function discover_devices() {
 
 	echo "Restarting bluetooth..."
-	rfkill block bluetooth
-	sleep 1
-	rfkill unblock bluetooth
 
 	echo "Starting discovery..."
 
