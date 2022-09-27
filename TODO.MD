@@ -1,7 +1,8 @@
 ## Extra functions to add on the BT pairing script :
 * Catch & return errors if BT is disabled
-* Can't catch whether device has been paired
 * Add timeout timer 
+* Break pairing if device not available
+* Colors (?)
 
 ## Other stuff to do (priority : medium)
 * Full tutorial

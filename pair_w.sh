@@ -4,7 +4,7 @@
 # and return the MAC adresses of the RSK robots
 function grab_rsk_devices() {
 	# Grab MAC adresses of only RSK devices
-	devices=$(bluetoothctl devices | grep "Soundcore")
+	devices=$(bluetoothctl devices | grep "RSK")
 	echo "$devices"
 }
 
@@ -158,8 +158,6 @@ function pair_robot() {
 # Apparently, if not in a coprocess it can collide with an existing one
 # This is more of a safety measure more than anything
 function discover_devices() {
-
-	echo "Restarting bluetooth..."
 
 	echo "Starting discovery..."
 
