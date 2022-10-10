@@ -3,10 +3,13 @@
 
 ## Table of contents
 
-#TODO
+1. Automatically (scripts)
+2. Manually  
+    1.1 Ubuntu  
+    1.2 Windows
 
-#### 1. Manually
-##### a. Ubuntu
+### 1. Manually
+#### a. Ubuntu
 
 This has been tested on Ubuntu 22.04.  
 You will require `bluetoothctl` and `rfcomm` but they should be installed by default
@@ -26,9 +29,13 @@ Ensure that your robots are powered on, and that you've enabled Bluetooth.
 **Note : If you do not see devices with the name RSK, try disconnecting your Bluetooth adapter and reconnecting it**
 
 Now for each RSK device shown, grab its MAC address, the second field of each output, then execute `pair ` followed by the MAC address.  
-The robots shouldn't be asking for any PIN code, if they do, just enter 1234. If that PIN is wrong, check the robot-soccer-kit wiki  
+The robots shouldn't be asking for any PIN code, if they do, just enter 1234.  
 
 [Screenshot of asking for pin]
+
+> :warning: In case the PIN code 1234 is not accepted by the robot,
+> it might be because of your Bluetooth driver version.  
+> Ubuntu 22.04 is known to not work well with RSK's robots.
 
 Most of the time, it is just waiting for you to confirm if a certain PIN code matches. Just enter `yes`
 
@@ -36,3 +43,4 @@ Most of the time, it is just waiting for you to confirm if a certain PIN code ma
 
 Once you've done this, your RSK device should be successfully paired !  
 But wait, this doesn't mean it is useable just yet. You still need to mount it.
+
